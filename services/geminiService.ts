@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Part } from "@google/genai";
 import { blobToBase64 } from '../utils/fileUtils.ts';
 
@@ -56,14 +57,8 @@ export const generateImageApi = async ({
   resolution,
 }: GenerateParams): Promise<{ url: string, blob: Blob }> => {
   
-  // No Netlify, as variáveis de ambiente em tempo de execução para SPAs dependem da injeção no build
-  const apiKey = process.env.API_KEY || "";
-  
-  if (!apiKey) {
-    throw new Error("Configuração Pendente: Adicione a 'API_KEY' em 'Site Settings > Environment Variables' no Netlify e faça um deploy com 'Clear cache'.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Usamos a chave diretamente do ambiente. Se estiver vazia, o SDK falhará e cairemos no catch.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
   const activeFn = mode === 'create' ? activeCreateFn : activeEditFn;
   const fullPrompt = getFullPrompt(prompt, activeFn, mode);
 
@@ -97,9 +92,9 @@ export const generateImageApi = async ({
 
     if (!imagePart || !imagePart.inlineData) {
       if (candidate?.finishReason === 'SAFETY') {
-        throw new Error("Conteúdo Bloqueado: O prompt ou as imagens violam as diretrizes de segurança da IA.");
+        throw new Error("Conteúdo bloqueado pelos filtros de segurança da IA.");
       }
-      throw new Error("Erro de Resposta: A IA não gerou uma imagem. Tente descrever sua ideia de outra forma.");
+      throw new Error("A IA não retornou uma imagem. Tente mudar o seu comando.");
     }
     
     const base64ImageBytes = imagePart.inlineData.data;
@@ -111,18 +106,19 @@ export const generateImageApi = async ({
     
     return { url: imageUrl, blob };
   } catch (err: any) {
-    console.error("NETLIFY_RUNTIME_ERROR:", err);
+    console.error("NETLIFY_RUNTIME_DEBUG:", err);
     
     const errorMsg = err.message || "";
     
-    if (errorMsg.includes("403") || errorMsg.includes("API key")) {
-      throw new Error("Erro de Autenticação: A chave configurada no Netlify é inválida ou não foi propagada. Use 'Clear cache and deploy'.");
+    // Se falhar por causa da chave (403/401) ou se ela estiver vazia
+    if (errorMsg.includes("403") || errorMsg.includes("API key") || errorMsg.includes("invalid") || !process.env.API_KEY) {
+      throw new Error("Erro de Configuração no Netlify: Vá em 'Site Settings > Env Variables', adicione a 'API_KEY' e use 'Clear cache and deploy'.");
     }
 
     if (errorMsg.includes("429")) {
-      throw new Error("Muitas solicitações: Aguarde um minuto antes de tentar novamente.");
+      throw new Error("Limite de cota atingido. Aguarde 60 segundos.");
     }
 
-    throw new Error(err.message || "Erro inesperado: Falha na comunicação com o servidor Gemini.");
+    throw new Error(err.message || "Erro na geração. Verifique sua conexão ou tente novamente.");
   }
 };
