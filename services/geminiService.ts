@@ -57,8 +57,14 @@ export const generateImageApi = async ({
   resolution,
 }: GenerateParams): Promise<{ url: string, blob: Blob }> => {
   
-  // Initialize AI with the environment key. If it fails, we handle it in the catch block.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  // A Netlify injeta variáveis de ambiente que podem ser acessadas via process.env
+  const apiKey = process.env.API_KEY || "";
+  
+  if (!apiKey) {
+    throw new Error("API_KEY não encontrada. Certifique-se de cadastrá-la no painel da Netlify e usar 'Clear cache and deploy' para ativar.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   const activeFn = mode === 'create' ? activeCreateFn : activeEditFn;
   const fullPrompt = getFullPrompt(prompt, activeFn, mode);
 
@@ -92,9 +98,9 @@ export const generateImageApi = async ({
 
     if (!imagePart || !imagePart.inlineData) {
       if (candidate?.finishReason === 'SAFETY') {
-        throw new Error("Conteúdo bloqueado por filtros de segurança.");
+        throw new Error("Conteúdo bloqueado por segurança (Prompt sensível).");
       }
-      throw new Error("A IA não retornou uma imagem válida. Tente ajustar o prompt.");
+      throw new Error("Servidor não retornou dados de imagem. Tente outro prompt.");
     }
     
     const base64ImageBytes = imagePart.inlineData.data;
@@ -106,18 +112,18 @@ export const generateImageApi = async ({
     
     return { url: imageUrl, blob };
   } catch (err: any) {
-    console.error("DEBUG_GEMINI_ERROR:", err);
+    console.error("NETLIFY_DEPLOY_DEBUG:", err);
     
     const errorMsg = err.message || "";
     
     if (errorMsg.includes("403") || errorMsg.includes("API key")) {
-      throw new Error("Erro de Autenticação: Verifique sua chave no Vercel e realize um NOVO DEPLOY para aplicar as mudanças.");
+      throw new Error("Erro de Autenticação: Verifique a 'API_KEY' no painel da Netlify (Site Settings > Environment Variables) e realize um novo Deploy.");
     }
 
     if (errorMsg.includes("429")) {
-      throw new Error("Limite de cota atingido. Aguarde 60 segundos.");
+      throw new Error("Limite de cota atingido (429). Aguarde um instante.");
     }
 
-    throw new Error(err.message || "Falha na conexão com o servidor de IA.");
+    throw new Error(err.message || "Falha na conexão com o motor de IA.");
   }
 };
