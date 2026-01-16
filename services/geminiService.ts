@@ -57,31 +57,35 @@ export const generateImageApi = async ({
   resolution,
 }: GenerateParams): Promise<{ url: string, blob: Blob }> => {
   
-  // Utiliza a chave de API do ambiente
+  // A API_KEY deve estar configurada nas variáveis de ambiente do Vercel
   const apiKey = process.env.API_KEY || "";
-  const ai = new GoogleGenAI({ apiKey });
   
+  if (!apiKey || apiKey === "undefined") {
+    throw new Error("API_KEY não encontrada. Configure a variável de ambiente no painel do Vercel.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   const activeFn = mode === 'create' ? activeCreateFn : activeEditFn;
   const fullPrompt = getFullPrompt(prompt, activeFn, mode);
 
   const parts: Part[] = [];
 
-  if (image1) {
-    const base64Image = await blobToBase64(image1);
-    parts.push({ inlineData: { mimeType: image1.type, data: base64Image } });
-  }
-
-  if (image2) {
-    const base64Image = await blobToBase64(image2);
-    parts.push({ inlineData: { mimeType: image2.type, data: base64Image } });
-  }
-
-  parts.push({ text: fullPrompt });
-
   try {
+    if (image1) {
+      const base64Image = await blobToBase64(image1);
+      parts.push({ inlineData: { mimeType: image1.type, data: base64Image } });
+    }
+
+    if (image2) {
+      const base64Image = await blobToBase64(image2);
+      parts.push({ inlineData: { mimeType: image2.type, data: base64Image } });
+    }
+
+    parts.push({ text: fullPrompt });
+
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image', // Modelo compatível com camada gratuita
-      contents: { parts: parts },
+      model: 'gemini-2.5-flash-image',
+      contents: [{ parts }], // Formato array obrigatório para maior compatibilidade
       config: { 
         imageConfig: {
           aspectRatio: resolution as any
@@ -93,7 +97,11 @@ export const generateImageApi = async ({
     const imagePart = candidate?.content?.parts?.find(p => p.inlineData);
 
     if (!imagePart || !imagePart.inlineData) {
-      throw new Error("A IA não retornou uma imagem. Tente um prompt mais claro.");
+      // Se cair aqui, a IA pode ter bloqueado por segurança ou erro de prompt
+      if (candidate?.finishReason === 'SAFETY') {
+        throw new Error("O conteúdo solicitado foi bloqueado pelos filtros de segurança da IA.");
+      }
+      throw new Error("A IA não conseguiu processar esta imagem. Tente mudar o prompt.");
     }
     
     const base64ImageBytes = imagePart.inlineData.data;
@@ -105,18 +113,22 @@ export const generateImageApi = async ({
     
     return { url: imageUrl, blob };
   } catch (err: any) {
-    console.error("Erro na API Gemini Flash:", err);
+    console.error("DEBUG_GEMINI_ERROR:", err);
     
-    const msg = err.message || "";
+    const errorMsg = err.message || "";
     
-    if (msg.includes("429")) {
-      throw new Error("Limite de cota excedido. Tente novamente em alguns segundos.");
+    if (errorMsg.includes("429") || errorMsg.includes("quota")) {
+      throw new Error("Limite de cota atingido (429). Aguarde 60 segundos.");
     }
 
-    if (msg.includes("safety") || msg.includes("blocked")) {
-      throw new Error("O conteúdo solicitado foi filtrado por segurança.");
+    if (errorMsg.includes("403") || errorMsg.includes("API key")) {
+      throw new Error("Chave de API inválida ou sem permissão para este modelo.");
     }
 
-    throw new Error("Falha na conexão com o servidor de imagens. Tente novamente.");
+    if (errorMsg.includes("fetch") || errorMsg.includes("network")) {
+      throw new Error("Erro de rede. Verifique sua conexão com a internet.");
+    }
+
+    throw new Error(err.message || "Ocorreu um erro desconhecido no servidor de IA.");
   }
 };

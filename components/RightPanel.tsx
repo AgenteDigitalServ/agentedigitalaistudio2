@@ -38,18 +38,20 @@ export const RightPanel: React.FC<RightPanelProps> = ({ generatedImage, isLoadin
 
   if (error) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 p-6 text-center">
-        <div className="bg-rose-500/10 p-6 rounded-full mb-6 border border-rose-500/20">
-          <svg className="w-12 h-12 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 p-8 text-center">
+        <div className="bg-rose-500/10 p-6 rounded-3xl mb-6 border border-rose-500/20 shadow-[0_0_40px_rgba(244,63,94,0.1)]">
+          <svg className="w-12 h-12 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         </div>
-        <h2 className="text-xl font-black text-rose-500 uppercase italic">Falha no Processamento</h2>
-        <p className="text-slate-500 text-xs mt-2 max-w-xs">{error}</p>
+        <h2 className="text-xl font-black text-rose-500 uppercase italic tracking-tight">STATUS: FALHA NO PROCESSAMENTO</h2>
+        <div className="mt-4 p-4 bg-slate-900/50 border border-slate-800 rounded-xl max-w-sm">
+            <p className="text-slate-400 text-xs font-medium leading-relaxed">{error}</p>
+        </div>
         
         <button 
           onClick={onRetry} 
-          className="active-scale mt-8 px-8 py-3 bg-slate-100 text-slate-950 font-black uppercase text-[10px] rounded-xl shadow-lg"
+          className="active-scale mt-8 px-10 py-4 bg-white text-slate-950 font-black uppercase text-[10px] rounded-2xl shadow-xl hover:bg-cyan-50 transition-colors tracking-widest"
         >
-          Reiniciar Tentativa
+          Tentar Novamente
         </button>
       </div>
     );
