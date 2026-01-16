@@ -18,32 +18,32 @@ function getFullPrompt(prompt: string, func: string, mode: string): string {
     if (!cleanPrompt) {
         if (mode === 'create') {
             switch(func) {
-                case 'sticker': return "a high quality sticker, die-cut, white background, masterpiece";
-                case 'text': return "a minimalist vector logo design, professional, white background";
-                case 'comic': return "professional comic book art, vibrant colors, detailed";
-                case '3d-mascot': return "cute 3D character mascot, Pixar style, high quality render, white background";
-                case 'thumbnail': return "eye-catching YouTube thumbnail background, high contrast, cinematic";
-                default: return "professional digital art, high resolution, cinematic lighting";
+                case 'sticker': return "a high quality sticker, die-cut, white background, masterpiece, 8k";
+                case 'text': return "a minimalist vector logo design, professional, clean typography, white background";
+                case 'comic': return "professional comic book art, vibrant colors, detailed line art, masterpiece";
+                case '3d-mascot': return "cute 3D character mascot, Pixar style, high quality render, white background, octane render";
+                case 'thumbnail': return "eye-catching YouTube thumbnail background, high contrast, cinematic, vibrant";
+                default: return "professional digital art, high resolution, cinematic lighting, masterpiece, detailed";
             }
         } else {
             switch(func) {
-                case 'retouch': return "Retouch and enhance this image, improve lighting and details";
-                case 'style': return "Apply a modern artistic style to this image";
-                case 'add-remove': return "Modify the details of this image realistically";
-                case 'compose': return "Merge these two images together artistically";
-                default: return "Enhance this image";
+                case 'retouch': return "Retouch and enhance this image, improve lighting, skin textures and details to perfection";
+                case 'style': return "Apply a modern, high-end artistic style to this image while maintaining content";
+                case 'add-remove': return "Modify the details of this image realistically and seamlessly";
+                case 'compose': return "Merge these two images together artistically with perfect lighting match";
+                default: return "Enhance this image to professional quality";
             }
         }
     }
 
     switch(func) {
-        case 'sticker': return `sticker of ${cleanPrompt}, die-cut, vector style, white background`;
-        case 'text': return `minimalist logo of ${cleanPrompt}, white background, high resolution`;
-        case 'comic': return `${cleanPrompt}, comic book style illustration, vibrant`;
-        case '3d-mascot': return `${cleanPrompt}, 3D mascot, modern render, white background`;
-        case 'thumbnail': return `YouTube thumbnail about ${cleanPrompt}, dynamic composition, vibrant`;
-        case 'compose': return `Combine these images: ${cleanPrompt}`;
-        default: return cleanPrompt;
+        case 'sticker': return `sticker of ${cleanPrompt}, die-cut, high quality vector style, white background`;
+        case 'text': return `minimalist logo design of ${cleanPrompt}, professional aesthetic, high resolution`;
+        case 'comic': return `${cleanPrompt}, professional comic book style illustration, masterpiece`;
+        case '3d-mascot': return `${cleanPrompt}, 3D mascot character, modern 3D render, white background, 8k`;
+        case 'thumbnail': return `YouTube thumbnail about ${cleanPrompt}, dynamic composition, vibrant colors, clickbait style`;
+        case 'compose': return `Combine these images seamlessly: ${cleanPrompt}`;
+        default: return `${cleanPrompt}, professional quality, cinematic lighting, highly detailed`;
     }
 }
 
@@ -57,7 +57,7 @@ export const generateImageApi = async ({
   resolution,
 }: GenerateParams): Promise<{ url: string, blob: Blob }> => {
   
-  // SEMPRE criar uma nova instância antes da chamada para garantir o uso da chave atualizada
+  // Utiliza a chave de API do ambiente
   const apiKey = process.env.API_KEY || "";
   const ai = new GoogleGenAI({ apiKey });
   
@@ -80,7 +80,7 @@ export const generateImageApi = async ({
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image', 
+      model: 'gemini-2.5-flash-image', // Modelo compatível com camada gratuita
       contents: { parts: parts },
       config: { 
         imageConfig: {
@@ -93,9 +93,7 @@ export const generateImageApi = async ({
     const imagePart = candidate?.content?.parts?.find(p => p.inlineData);
 
     if (!imagePart || !imagePart.inlineData) {
-      // Verifica se houve retorno de texto explicando erro (ex: conteúdo bloqueado)
-      const textError = candidate?.content?.parts?.find(p => p.text)?.text;
-      throw new Error(textError || "A IA não conseguiu gerar esta imagem. Tente mudar o prompt.");
+      throw new Error("A IA não retornou uma imagem. Tente um prompt mais claro.");
     }
     
     const base64ImageBytes = imagePart.inlineData.data;
@@ -107,23 +105,18 @@ export const generateImageApi = async ({
     
     return { url: imageUrl, blob };
   } catch (err: any) {
-    console.error("Erro detalhado da API:", err);
+    console.error("Erro na API Gemini Flash:", err);
     
-    // Tratamento de erros específicos para orientar o usuário
-    const errorMessage = err.message || "";
+    const msg = err.message || "";
     
-    if (errorMessage.includes("429") || errorMessage.includes("quota")) {
-      throw new Error("Limite de cota excedido. Aguarde um minuto ou troque sua chave de API.");
-    }
-    
-    if (errorMessage.includes("401") || errorMessage.includes("403") || errorMessage.includes("API key")) {
-      throw new Error("AUTH_ERROR: Falha na autenticação da Chave de API.");
+    if (msg.includes("429")) {
+      throw new Error("Limite de cota excedido. Tente novamente em alguns segundos.");
     }
 
-    if (errorMessage.includes("safety") || errorMessage.includes("blocked")) {
-      throw new Error("A imagem solicitada foi bloqueada pelos filtros de segurança da IA.");
+    if (msg.includes("safety") || msg.includes("blocked")) {
+      throw new Error("O conteúdo solicitado foi filtrado por segurança.");
     }
 
-    throw new Error("Falha na conexão com o servidor de imagens. Verifique sua internet.");
+    throw new Error("Falha na conexão com o servidor de imagens. Tente novamente.");
   }
 };
