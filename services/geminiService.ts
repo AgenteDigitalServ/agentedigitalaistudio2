@@ -57,14 +57,8 @@ export const generateImageApi = async ({
   resolution,
 }: GenerateParams): Promise<{ url: string, blob: Blob }> => {
   
-  // A API_KEY deve estar configurada nas variáveis de ambiente do Vercel
-  const apiKey = process.env.API_KEY || "";
-  
-  if (!apiKey || apiKey === "undefined") {
-    throw new Error("API_KEY não encontrada. Configure a variável de ambiente no painel do Vercel.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Initialize AI with the environment key. If it fails, we handle it in the catch block.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
   const activeFn = mode === 'create' ? activeCreateFn : activeEditFn;
   const fullPrompt = getFullPrompt(prompt, activeFn, mode);
 
@@ -85,7 +79,7 @@ export const generateImageApi = async ({
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: [{ parts }], // Formato array obrigatório para maior compatibilidade
+      contents: [{ parts }],
       config: { 
         imageConfig: {
           aspectRatio: resolution as any
@@ -97,11 +91,10 @@ export const generateImageApi = async ({
     const imagePart = candidate?.content?.parts?.find(p => p.inlineData);
 
     if (!imagePart || !imagePart.inlineData) {
-      // Se cair aqui, a IA pode ter bloqueado por segurança ou erro de prompt
       if (candidate?.finishReason === 'SAFETY') {
-        throw new Error("O conteúdo solicitado foi bloqueado pelos filtros de segurança da IA.");
+        throw new Error("Conteúdo bloqueado por filtros de segurança.");
       }
-      throw new Error("A IA não conseguiu processar esta imagem. Tente mudar o prompt.");
+      throw new Error("A IA não retornou uma imagem válida. Tente ajustar o prompt.");
     }
     
     const base64ImageBytes = imagePart.inlineData.data;
@@ -117,18 +110,14 @@ export const generateImageApi = async ({
     
     const errorMsg = err.message || "";
     
-    if (errorMsg.includes("429") || errorMsg.includes("quota")) {
-      throw new Error("Limite de cota atingido (429). Aguarde 60 segundos.");
-    }
-
     if (errorMsg.includes("403") || errorMsg.includes("API key")) {
-      throw new Error("Chave de API inválida ou sem permissão para este modelo.");
+      throw new Error("Erro de Autenticação: Verifique sua chave no Vercel e realize um NOVO DEPLOY para aplicar as mudanças.");
     }
 
-    if (errorMsg.includes("fetch") || errorMsg.includes("network")) {
-      throw new Error("Erro de rede. Verifique sua conexão com a internet.");
+    if (errorMsg.includes("429")) {
+      throw new Error("Limite de cota atingido. Aguarde 60 segundos.");
     }
 
-    throw new Error(err.message || "Ocorreu um erro desconhecido no servidor de IA.");
+    throw new Error(err.message || "Falha na conexão com o servidor de IA.");
   }
 };

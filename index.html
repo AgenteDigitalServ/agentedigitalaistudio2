@@ -13,7 +13,9 @@
     <link rel="manifest" href="./manifest.json" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      window.process = window.process || { env: {} };
+      // Ensure process.env is available for the SDK without overwriting existing globals
+      window.process = window.process || {};
+      window.process.env = window.process.env || {};
     </script>
     <style>
       :root {
