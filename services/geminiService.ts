@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Part } from "@google/genai";
 import { blobToBase64 } from '../utils/fileUtils.ts';
 
@@ -57,11 +56,11 @@ export const generateImageApi = async ({
   resolution,
 }: GenerateParams): Promise<{ url: string, blob: Blob }> => {
   
-  // A Netlify injeta variáveis de ambiente que podem ser acessadas via process.env
+  // No Netlify, as variáveis de ambiente em tempo de execução para SPAs dependem da injeção no build
   const apiKey = process.env.API_KEY || "";
   
   if (!apiKey) {
-    throw new Error("API_KEY não encontrada. Certifique-se de cadastrá-la no painel da Netlify e usar 'Clear cache and deploy' para ativar.");
+    throw new Error("Configuração Pendente: Adicione a 'API_KEY' em 'Site Settings > Environment Variables' no Netlify e faça um deploy com 'Clear cache'.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -98,9 +97,9 @@ export const generateImageApi = async ({
 
     if (!imagePart || !imagePart.inlineData) {
       if (candidate?.finishReason === 'SAFETY') {
-        throw new Error("Conteúdo bloqueado por segurança (Prompt sensível).");
+        throw new Error("Conteúdo Bloqueado: O prompt ou as imagens violam as diretrizes de segurança da IA.");
       }
-      throw new Error("Servidor não retornou dados de imagem. Tente outro prompt.");
+      throw new Error("Erro de Resposta: A IA não gerou uma imagem. Tente descrever sua ideia de outra forma.");
     }
     
     const base64ImageBytes = imagePart.inlineData.data;
@@ -112,18 +111,18 @@ export const generateImageApi = async ({
     
     return { url: imageUrl, blob };
   } catch (err: any) {
-    console.error("NETLIFY_DEPLOY_DEBUG:", err);
+    console.error("NETLIFY_RUNTIME_ERROR:", err);
     
     const errorMsg = err.message || "";
     
     if (errorMsg.includes("403") || errorMsg.includes("API key")) {
-      throw new Error("Erro de Autenticação: Verifique a 'API_KEY' no painel da Netlify (Site Settings > Environment Variables) e realize um novo Deploy.");
+      throw new Error("Erro de Autenticação: A chave configurada no Netlify é inválida ou não foi propagada. Use 'Clear cache and deploy'.");
     }
 
     if (errorMsg.includes("429")) {
-      throw new Error("Limite de cota atingido (429). Aguarde um instante.");
+      throw new Error("Muitas solicitações: Aguarde um minuto antes de tentar novamente.");
     }
 
-    throw new Error(err.message || "Falha na conexão com o motor de IA.");
+    throw new Error(err.message || "Erro inesperado: Falha na comunicação com o servidor Gemini.");
   }
 };
