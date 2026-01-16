@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Agente Digital AI Studio</title>
+    <meta name="theme-color" content="#111827" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./manifest.json" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --lime-green: #39FF14;
+        --dark-bg: #000000;
+      }
+      body {
+        background-color: var(--dark-bg);
+        color: #e5e7eb;
+        margin: 0;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        -webkit-tap-highlight-color: transparent;
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+      #root {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .lime-accent { color: var(--lime-green); }
+      .lime-bg { background-color: var(--lime-green); }
+      
+      input, textarea, select {
+        font-size: 16px !important;
+      }
+
+      .futuristic-scrollbar::-webkit-scrollbar { width: 4px; }
+      .futuristic-scrollbar::-webkit-scrollbar-thumb {
+        background-color: var(--lime-green);
+        border-radius: 10px;
+      }
+      
+      .active-scale:active {
+        transform: scale(0.96);
+      }
+
+      @keyframes pulse-lime {
+        0% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(57, 255, 20, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0); }
+      }
+      .pulse-btn {
+        animation: pulse-lime 2s infinite;
+      }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0"
+      }
+    }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

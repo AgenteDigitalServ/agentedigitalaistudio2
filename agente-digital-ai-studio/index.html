@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerador de Imagens Profissional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* verde-limão futurista overrides */
+      :root {
+        --lime-green: #39FF14;
+        --dark-bg: #111827;
+        --panel-bg: #1f2937;
+        --text-primary: #e5e7eb;
+        --text-secondary: #9ca3af;
+        --border-color: #374151;
+      }
+      body {
+        background-color: var(--dark-bg);
+        color: var(--text-primary);
+      }
+      .lime-accent {
+        color: var(--lime-green);
+      }
+      .lime-bg {
+        background-color: var(--lime-green);
+      }
+      .lime-border {
+        border-color: var(--lime-green);
+      }
+      .futuristic-scrollbar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .futuristic-scrollbar::-webkit-scrollbar-track {
+        background: var(--dark-bg);
+      }
+      .futuristic-scrollbar::-webkit-scrollbar-thumb {
+        background-color: var(--lime-green);
+        border-radius: 20px;
+        border: 2px solid var(--dark-bg);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
